@@ -1,0 +1,34 @@
+/include/ "system-conf.dtsi"
+/ {
+};
+
+&i2c0 {
+	ssm2603: ssm2603@1a{
+		compatible = "adi,ssm2603";
+		reg = <0x1a>;
+	};
+};
+
+&xadc_wiz_0 {
+	xlnx,channels {
+		#address-cells = <1>;
+		#size-cells = <0>;
+		channelJA4@7 {
+			reg = <7>;
+		};
+		channelJA2@8 {
+			reg = <8>;
+		};
+		channelJA1@15 {
+			reg = <15>;
+		};
+		channelJA3@16 {
+			reg = <16>;
+		};
+	};
+};
+
+&axi_fifo_mm_s_0 {
+	xlnx,tx-max-pkt-size = <1>; 
+	xlnx,rx-min-pkt-size = <480>; 
+};
