@@ -24,7 +24,8 @@ The main goal of the project is to make a demo for monitoring audio through a we
 
 ## Web interface control options
 After clicking the cog on the top left of the screen, the audio pipeline options reveal themselves.
-\
+
+
 Options for both boards are:
 | Option       | Description | Default |
 | :-- |:--| :-- |
@@ -34,7 +35,8 @@ Options for both boards are:
 | Bar scale | Depending on the input volume/ADC/DAC settings the displayed bars can be either too large or small. This sliders allows the user to scale them independently of the audio pipeline. (Min value = 0, Max value = 63). | 10 |
 | ADC volume | Sets the ADC (input) Volume. (Min value = 0, Max value = 63 ).| 10 |
 | DAC volume | Sets the DAC (output) Volume. (Min value = 0, Max value = 127 ).| 121 |
-\
+
+
 Options for Zybo Z7-20 only:
 | Option       | Description | Default |
 | :-- |:--| :-- |
