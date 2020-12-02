@@ -8,7 +8,7 @@ The main goal of the project is to make a demo for monitoring audio through a we
 - I2S Serializer/Deserializer for processing PCM audio
 - PS to PL audio codec configuration using I2C
 - Audio effect chain, using [IP's](https://github.com/Vladilit/fpga-multi-effect) from Vladilit. (Zybo Z7-20 Only)
-- PL to PS audio streaming
+- PL to PS audio streaming, using the AXI-Stream FIFO [driver](https://github.com/jacobfeder/axisfifo) from jacobfeder.
 - Software implemented frequency spectrum, using JDUPUY's [FFT library](https://github.com/jdupuy/dj_fft)
 - Simple webserver in CPPREST
 - Web interface for controlling and monitoring the audio pipeline
