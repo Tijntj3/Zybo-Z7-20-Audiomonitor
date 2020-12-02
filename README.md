@@ -1,1 +1,1 @@
-# Zybo-Z7-20-Audiomonitor
+# Zybo Z7-20 Audiomonitor
