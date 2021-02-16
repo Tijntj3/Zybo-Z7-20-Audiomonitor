@@ -32,7 +32,7 @@ body {
     margin-top: auto;
     margin-bottom: auto;
     margin-left: -0.5vh;
-    height: 74vh;
+    height: 65vh;
     display: flex;
     width: 0px;
     min-width: 0px;
@@ -190,6 +190,20 @@ body {
 
 #delay:hover > #delayText {
     color: #1e1e1e;
+}
+
+#data {
+    margin: auto;
+    height: 80vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+}
+
+.bars {
+    margin: 0;
+    height: 40vh;
+    display: flex;
 }
 
 .freq {

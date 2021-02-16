@@ -44,22 +44,6 @@ function mute() {
     shttp.send();
 }
 
-function mode() {
-    var checkBox = document.getElementById("modeControl");
-    var modeText = document.getElementById("modeText");
-
-    if (checkBox.checked == true) {
-        modeText.textContent = "Raw";
-        shttp.open("POST", "mode=1", true);
-    } 
-    else {
-        modeText.textContent = "Spectrum";
-        shttp.open("POST", "mode=0", true);
-    }
-
-    shttp.send();
-}
-
 function channel() {
     var checkBox = document.getElementById("channelControl");
     var channelText = document.getElementById("channelText");
@@ -162,6 +146,22 @@ function DAC() {
 }
 
 function setFreqHeight(obj) {
+    document.getElementById("freq31").style.height = obj.freq31.toString() + "vh";
+    document.getElementById("freq30").style.height = obj.freq30.toString() + "vh";
+    document.getElementById("freq29").style.height = obj.freq29.toString() + "vh";
+    document.getElementById("freq28").style.height = obj.freq28.toString() + "vh";
+    document.getElementById("freq27").style.height = obj.freq27.toString() + "vh";
+    document.getElementById("freq26").style.height = obj.freq26.toString() + "vh";
+    document.getElementById("freq25").style.height = obj.freq25.toString() + "vh";
+    document.getElementById("freq24").style.height = obj.freq24.toString() + "vh";
+    document.getElementById("freq23").style.height = obj.freq23.toString() + "vh";
+    document.getElementById("freq22").style.height = obj.freq22.toString() + "vh";
+    document.getElementById("freq21").style.height = obj.freq21.toString() + "vh";
+    document.getElementById("freq20").style.height = obj.freq20.toString() + "vh";
+    document.getElementById("freq19").style.height = obj.freq19.toString() + "vh";
+    document.getElementById("freq18").style.height = obj.freq18.toString() + "vh";
+    document.getElementById("freq17").style.height = obj.freq17.toString() + "vh";
+    document.getElementById("freq16").style.height = obj.freq16.toString() + "vh";
     document.getElementById("freq15").style.height = obj.freq15.toString() + "vh";
     document.getElementById("freq14").style.height = obj.freq14.toString() + "vh";
     document.getElementById("freq13").style.height = obj.freq13.toString() + "vh";
