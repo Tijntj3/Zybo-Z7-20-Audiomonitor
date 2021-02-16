@@ -44,40 +44,38 @@ void handle_put(web::http::http_request request)
 {
     web::json::value freq;
 
-    if (!(mode)) {
-        static unsigned frequencies[HTTP_FRAM_SIZE] = {0};
-        unsigned prevFrequencies[HTTP_FRAM_SIZE];
+    static unsigned frequencies[HTTP_FRAM_SIZE] = {0};
+    unsigned prevFrequencies[HTTP_FRAM_SIZE];
 
-        memcpy(prevFrequencies, frequencies, sizeof(frequencies));
+    memcpy(prevFrequencies, frequencies, sizeof(frequencies));
 
-        for (int k = HTTP_FRAM_SIZE - 2; k >= 0; k--) {
-            frequencies[k] = prevFrequencies[k+1];
-            freq[U("freq" + std::to_string(k))] = web::json::value::number(prevFrequencies[k+1]);
-        }
-
-        unsigned tmp = 0;
-        for (int k = 0; k < AVG_BUFFE_SIZE - 1; k++) {
-            tmp = tmp + (scale * readAvg[k]);
-        }
-        tmp = tmp / AVG_BUFFE_SIZE;
-        tmp = (unsigned)((tmp * MAX_VIEWHEIGHT * 10) / (float)MID_READ_VALUE);
-        if (tmp > MAX_VIEWHEIGHT) tmp = MAX_VIEWHEIGHT;
-
-        frequencies[15] = tmp;
-	    freq[U("freq15")] = web::json::value::number(tmp);
+    for (int k = HTTP_FRAM_SIZE - 2; k >= 0; k--) {
+        frequencies[k] = prevFrequencies[k+1];
+        freq[U("freq" + std::to_string(k))] = web::json::value::number(prevFrequencies[k+1]);
     }
-    else {
-        for (int k = 0; k < HTTP_FRAM_SIZE; k++) {
-            float magBufAvg = 0;
-            for (int i = 0; i < AVG_BUFFE_SIZE; i++) {
-                magBufAvg = magBufAvg + magBuf[i][k];
-            }
-            magBufAvg = magBufAvg/AVG_BUFFE_SIZE;
-            magBufAvg = (magBufAvg/4000000)*MAX_VIEWHEIGHT*scale;
-            if (magBufAvg > MAX_VIEWHEIGHT) magBufAvg = MAX_VIEWHEIGHT;
 
-            freq[U("freq" + std::to_string(k))] = web::json::value::number(magBufAvg);
+    unsigned tmp = 0;
+    for (int k = 0; k < AVG_BUFFE_SIZE - 1; k++) {
+        tmp = tmp + (scale * readAvg[k]);
+    }
+    tmp = tmp / AVG_BUFFE_SIZE;
+    tmp = (unsigned)((tmp * MAX_VIEWHEIGHT * 10) / (float)MID_READ_VALUE);
+    if (tmp > MAX_VIEWHEIGHT) tmp = MAX_VIEWHEIGHT;
+
+    frequencies[15] = tmp;
+    freq[U("freq15")] = web::json::value::number(tmp);
+
+    //FFT
+    for (int k = HTTP_FRAM_SIZE; k < 2*HTTP_FRAM_SIZE; k++) {
+        float magBufAvg = 0;
+        for (int i = 0; i < AVG_BUFFE_SIZE; i++) {
+            magBufAvg = magBufAvg + magBuf[i][k-HTTP_FRAM_SIZE];
         }
+        magBufAvg = magBufAvg/AVG_BUFFE_SIZE;
+        magBufAvg = (magBufAvg/4000000)*MAX_VIEWHEIGHT*scale;
+        if (magBufAvg > MAX_VIEWHEIGHT) magBufAvg = MAX_VIEWHEIGHT;
+
+        freq[U("freq" + std::to_string(k))] = web::json::value::number(magBufAvg);
     }
     request.reply(web::http::status_codes::OK, freq);
 }
@@ -238,126 +236,123 @@ int main (int argc, char** argv)
 		                    std::cerr << "Stream FIFO read, cannot read fifo."  << std::endl;
 		                    exit(-1);
                         }
+                        //Raw PCM values (loudness)
+                        unsigned long tmp = 0;
+                        unsigned prevAvg[AVG_BUFFE_SIZE];
 
-                        if (!(mode)) {
-                            unsigned long tmp = 0;
-                            unsigned prevAvg[AVG_BUFFE_SIZE];
+                        memcpy(prevAvg, readAvg, sizeof(readAvg));
 
-                            memcpy(prevAvg, readAvg, sizeof(readAvg));
-
-                            for (int k = AVG_BUFFE_SIZE - 2; k >= 0; k--) {
-                                readAvg[k] = prevAvg[k+1];
-                            }
-
-                            for (int k = 0; k < MIN_RDPKT_SIZE - 1; k++) {
-                                tmp = tmp + abs(readVal[k]);
-                            }
-                            tmp = tmp / MIN_RDPKT_SIZE;
-                            readAvg[AVG_BUFFE_SIZE - 1] = tmp;
+                        for (int k = AVG_BUFFE_SIZE - 2; k >= 0; k--) {
+                            readAvg[k] = prevAvg[k+1];
                         }
-                        else {
-                            auto audData = std::vector<std::complex<float>>(MIN_RDPKT_SIZE);
-                            float magPrevBuf[AVG_BUFFE_SIZE][HTTP_FRAM_SIZE];
-                            float magAvg[HTTP_FRAM_SIZE];
-                            double mag = 0;
 
-                            for (int k = 0; k < AVG_BUFFE_SIZE; k++) {
-                                memcpy(magPrevBuf[k], magBuf[k], sizeof(magAvg));
-                            }   
-
-                            for (int k = 0; k < AVG_BUFFE_SIZE - 1; k++) {
-                                memcpy(magBuf[k], magPrevBuf[k + 1], sizeof(magAvg));
-                            }   
-
-                            for (int k = 0; k < MIN_RDPKT_SIZE; k++) {
-                                audData[k] = (float)readVal[k];
-                            }
-
-                            auto fftData = dj::fft1d(audData, dj::fft_dir::DIR_FWD);
-
-                            magAvg[0] = 0.2*std::abs(fftData[0]);
-                            magAvg[1] = 0.3*std::abs(fftData[1]);
-                            magAvg[2] = 0.4*std::abs(fftData[2]);
-
-                            for (int k = 0; k < 2; k++) {
-                                mag = mag + std::abs(fftData[3+k]);
-                            }
-                            magAvg[3] = 0.6*(float)(mag/2);
-
-                            mag = 0;
-                            for (int k = 0; k < 3; k++) {
-                                mag = mag + std::abs(fftData[5+k]);
-                            }
-                            magAvg[4] = 0.8*(float)(mag/3);
-                            
-                            mag = 0;
-                            for (int k = 0; k < 4; k++) {
-                                mag = mag + std::abs(fftData[8+k]);
-                            }
-                            magAvg[5] = (float)(mag/4);
-                            
-                            mag = 0;
-                            for (int k = 0; k < 5; k++) {
-                                mag = mag + std::abs(fftData[12+k]);
-                            }
-                            magAvg[6] = 1.0*(float)(mag/5);
-
-                            mag = 0;
-                            for (int k = 0; k < 6; k++) {
-                                mag = mag + std::abs(fftData[17+k]);
-                            }
-                            magAvg[7] = 1.2*(float)(mag/6);
-
-                            mag = 0;
-                            for (int k = 0; k < 9; k++) {
-                                mag = mag + std::abs(fftData[23+k]);
-                            }
-                            magAvg[8] = 1.4*(float)(mag/9);
-
-                            mag = 0;
-                            for (int k = 0; k < 12; k++) {
-                                mag = mag + std::abs(fftData[32+k]);
-                            }
-                            magAvg[9] = 1.6*(float)(mag/12);
-
-                            mag = 0;
-                            for (int k = 0; k < 16; k++) {
-                                mag = mag + std::abs(fftData[44+k]);
-                            }
-                            magAvg[10] = 1.8*(float)(mag/16);
-
-                            mag = 0;
-                            for (int k = 0; k < 21; k++) {
-                                mag = mag + std::abs(fftData[60+k]);
-                            }
-                            magAvg[11] = 2*(float)(mag/21);
-
-                            mag = 0;
-                            for (int k = 0; k < 27; k++) {
-                                mag = mag + std::abs(fftData[81+k]);
-                            }
-                            magAvg[12] = 2.2*(float)(mag/27);
-
-                            mag = 0;
-                            for (int k = 0; k < 36; k++) {
-                                mag = mag + std::abs(fftData[108+k]);
-                            }
-                            magAvg[13] = 2.4*(float)(mag/36);
-
-                            mag = 0;
-                            for (int k = 0; k < 48; k++) {
-                                mag = mag + std::abs(fftData[144+k]);
-                            }
-                            magAvg[14] = 2.6*(float)(mag/48);
-
-                            mag = 0;
-                            for (int k = 0; k < 64; k++) {
-                                mag = mag + std::abs(fftData[192+k]);
-                            }
-                            magAvg[15] = 2.8*(float)(mag/64);
-
-                            memcpy(magBuf[AVG_BUFFE_SIZE - 1], magAvg, sizeof(magAvg));
+                        for (int k = 0; k < MIN_RDPKT_SIZE - 1; k++) {
+                            tmp = tmp + abs(readVal[k]);
                         }
+                        tmp = tmp / MIN_RDPKT_SIZE;
+                        readAvg[AVG_BUFFE_SIZE - 1] = tmp;
+                        //FFT values
+                        auto audData = std::vector<std::complex<float>>(MIN_RDPKT_SIZE);
+                        float magPrevBuf[AVG_BUFFE_SIZE][HTTP_FRAM_SIZE];
+                        float magAvg[HTTP_FRAM_SIZE];
+                        double mag = 0;
+
+                        for (int k = 0; k < AVG_BUFFE_SIZE; k++) {
+                            memcpy(magPrevBuf[k], magBuf[k], sizeof(magAvg));
+                        }   
+
+                        for (int k = 0; k < AVG_BUFFE_SIZE - 1; k++) {
+                            memcpy(magBuf[k], magPrevBuf[k + 1], sizeof(magAvg));
+                        }   
+
+                        for (int k = 0; k < MIN_RDPKT_SIZE; k++) {
+                            audData[k] = (float)readVal[k];
+                        }
+
+                        auto fftData = dj::fft1d(audData, dj::fft_dir::DIR_FWD);
+
+                        magAvg[0] = 0.2*std::abs(fftData[0]);
+                        magAvg[1] = 0.3*std::abs(fftData[1]);
+                        magAvg[2] = 0.4*std::abs(fftData[2]);
+
+                        for (int k = 0; k < 2; k++) {
+                            mag = mag + std::abs(fftData[3+k]);
+                        }
+                        magAvg[3] = 0.6*(float)(mag/2);
+
+                        mag = 0;
+                        for (int k = 0; k < 3; k++) {
+                            mag = mag + std::abs(fftData[5+k]);
+                        }
+                        magAvg[4] = 0.8*(float)(mag/3);
+                        
+                        mag = 0;
+                        for (int k = 0; k < 4; k++) {
+                            mag = mag + std::abs(fftData[8+k]);
+                        }
+                        magAvg[5] = (float)(mag/4);
+                        
+                        mag = 0;
+                        for (int k = 0; k < 5; k++) {
+                            mag = mag + std::abs(fftData[12+k]);
+                        }
+                        magAvg[6] = 1.0*(float)(mag/5);
+
+                        mag = 0;
+                        for (int k = 0; k < 6; k++) {
+                            mag = mag + std::abs(fftData[17+k]);
+                        }
+                        magAvg[7] = 1.2*(float)(mag/6);
+
+                        mag = 0;
+                        for (int k = 0; k < 9; k++) {
+                            mag = mag + std::abs(fftData[23+k]);
+                        }
+                        magAvg[8] = 1.4*(float)(mag/9);
+
+                        mag = 0;
+                        for (int k = 0; k < 12; k++) {
+                            mag = mag + std::abs(fftData[32+k]);
+                        }
+                        magAvg[9] = 1.6*(float)(mag/12);
+
+                        mag = 0;
+                        for (int k = 0; k < 16; k++) {
+                            mag = mag + std::abs(fftData[44+k]);
+                        }
+                        magAvg[10] = 1.8*(float)(mag/16);
+
+                        mag = 0;
+                        for (int k = 0; k < 21; k++) {
+                            mag = mag + std::abs(fftData[60+k]);
+                        }
+                        magAvg[11] = 2*(float)(mag/21);
+
+                        mag = 0;
+                        for (int k = 0; k < 27; k++) {
+                            mag = mag + std::abs(fftData[81+k]);
+                        }
+                        magAvg[12] = 2.2*(float)(mag/27);
+
+                        mag = 0;
+                        for (int k = 0; k < 36; k++) {
+                            mag = mag + std::abs(fftData[108+k]);
+                        }
+                        magAvg[13] = 2.4*(float)(mag/36);
+
+                        mag = 0;
+                        for (int k = 0; k < 48; k++) {
+                            mag = mag + std::abs(fftData[144+k]);
+                        }
+                        magAvg[14] = 2.6*(float)(mag/48);
+
+                        mag = 0;
+                        for (int k = 0; k < 64; k++) {
+                            mag = mag + std::abs(fftData[192+k]);
+                        }
+                        magAvg[15] = 2.8*(float)(mag/64);
+
+                        memcpy(magBuf[AVG_BUFFE_SIZE - 1], magAvg, sizeof(magAvg));
                     }
                 }
             }

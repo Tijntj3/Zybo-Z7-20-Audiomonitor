@@ -14,7 +14,7 @@ The main goal of the project is to make a demo for monitoring audio through a we
 - Web interface for controlling and monitoring the audio pipeline
 
 ## How to setup
-1. Copy the BOOT.BIN and image.ub files from the SD_Card folder to an empty FAT32 formatted SD card.
+1. Copy the BOOT.BIN and image.ub files from the release page to an empty FAT32 formatted SD card.
 2. Turn on the Zybo and log in to it via Serial or SSH. The username and password are both `root`.
 3. Start the audio monitor system by running the following command:
     ````
@@ -30,7 +30,6 @@ Options for both boards are:
 | Option       | Description | Default |
 | :-- |:--| :-- |
 | (Un)Mute | Sets the MUTE signal to the audio codec, turning the in- and outputs on/off. When off, PCM is replaced with zeroes. | Muted |
-| Raw/Spectrum | Switches between displaying averaged PCM values (Raw) and the frequency spectrum (Spectrum). | Raw |
 | Left/Right | Decides which of the two audio channels is streamed to the PS. | Left |
 | Bar scale | Depending on the input volume/ADC/DAC settings the displayed bars can be either too large or small. This sliders allows the user to scale them independently of the audio pipeline. (Min value = 0, Max value = 63). | 10 |
 | ADC volume | Sets the ADC (input) Volume. (Min value = 0, Max value = 63 ).| 10 |
@@ -44,3 +43,5 @@ Options for Zybo Z7-20 only:
 | (No) octaver | Turns on the octaver effect in the audio pipeline. The octaver setting is "1000" and as if now cannot be changed. | Off |
 | (No) tremolo | Turns on the tremolo effect in the audio pipeline. The tremolo setting is "1000" and as if now cannot be changed. Note that the tremolo is sensitive to clipping due to PL multiplication. | Off |
 | (No) delay | Turns on the delay effect in the audio pipeline. The delay setting is "1000" and as if now cannot be changed. | Off |
+
+The top set of blue bars show the loudness of the music and the bottom set displays the frequency contents.
